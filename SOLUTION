@@ -1,0 +1,134 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace DesafioProjetoHospedagem.Models
+{
+    public class Pessoa
+    {
+        public string Nome { get; set; }
+        public string Sobrenome { get; set; }
+
+        public Pessoa(string nome, string sobrenome = "")
+        {
+            Nome = nome;
+            Sobrenome = sobrenome;
+        }
+    }
+
+    public class Suite
+    {
+        public string TipoSuite { get; set; }
+        public int Capacidade { get; set; }
+        public decimal ValorDiaria { get; set; }
+
+        public Suite(string tipoSuite, int capacidade, decimal valorDiaria)
+        {
+            TipoSuite = tipoSuite;
+            Capacidade = capacidade;
+            ValorDiaria = valorDiaria;
+        }
+    }
+
+    public class Reserva
+    {
+        public List<Pessoa> Hospedes { get; private set; }
+        public Suite Suite { get; private set; }
+        public int DiasReservados { get; set; }
+
+        public Reserva(int diasReservados)
+        {
+            DiasReservados = diasReservados;
+            Hospedes = new List<Pessoa>();
+        }
+
+        public void CadastrarHospedes(List<Pessoa> hospedes)
+        {
+            if (Suite == null)
+                throw new InvalidOperationException("Suite deve ser cadastrada antes dos hóspedes");
+
+            if (hospedes.Count > Suite.Capacidade)
+                throw new ArgumentException($"A suíte tem capacidade para {Suite.Capacidade} hóspedes, mas {hospedes.Count} foram informados");
+
+            Hospedes = hospedes;
+        }
+
+        public void CadastrarSuite(Suite suite)
+        {
+            Suite = suite;
+        }
+
+        public int ObterQuantidadeHospedes()
+        {
+            return Hospedes.Count;
+        }
+
+        public decimal CalcularValorDiaria()
+        {
+            if (Suite == null)
+                throw new InvalidOperationException("Suite não foi cadastrada");
+
+            decimal valorTotal = DiasReservados * Suite.ValorDiaria;
+
+            // Aplica desconto de 10% para reservas de 10 dias ou mais
+            if (DiasReservados >= 10)
+            {
+                valorTotal *= 0.9m; // 10% de desconto
+            }
+
+            return valorTotal;
+        }
+    }
+}
+
+// Programa principal
+Console.OutputEncoding = Encoding.UTF8;
+
+// Cria os modelos de hóspedes e cadastra na lista de hóspedes
+List<Pessoa> hospedes = new List<Pessoa>();
+
+Pessoa p1 = new Pessoa(nome: "Hóspede 1");
+Pessoa p2 = new Pessoa(nome: "Hóspede 2");
+
+hospedes.Add(p1);
+hospedes.Add(p2);
+
+// Cria a suíte
+Suite suite = new Suite(tipoSuite: "Premium", capacidade: 2, valorDiaria: 30);
+
+// Cria uma nova reserva, passando a suíte e os hóspedes
+Reserva reserva = new Reserva(diasReservados: 5);
+reserva.CadastrarSuite(suite);
+reserva.CadastrarHospedes(hospedes);
+
+// Exibe a quantidade de hóspedes e o valor da diária
+Console.WriteLine($"Hóspedes: {reserva.ObterQuantidadeHospedes()}");
+Console.WriteLine($"Valor diária: {reserva.CalcularValorDiaria():C}");
+
+// Teste com mais dias para verificar o desconto
+Reserva reservaComDesconto = new Reserva(diasReservados: 12);
+reservaComDesconto.CadastrarSuite(suite);
+reservaComDesconto.CadastrarHospedes(hospedes);
+
+Console.WriteLine($"\nReserva com desconto (12 dias):");
+Console.WriteLine($"Hóspedes: {reservaComDesconto.ObterQuantidadeHospedes()}");
+Console.WriteLine($"Valor diária com desconto: {reservaComDesconto.CalcularValorDiaria():C}");
+
+// Teste de exceção - tentativa de cadastrar mais hóspedes que a capacidade
+try
+{
+    List<Pessoa> muitosHospedes = new List<Pessoa>
+    {
+        new Pessoa("Hóspede 1"),
+        new Pessoa("Hóspede 2"),
+        new Pessoa("Hóspede 3") // A suíte só tem capacidade para 2
+    };
+
+    Reserva reservaInvalida = new Reserva(diasReservados: 3);
+    reservaInvalida.CadastrarSuite(suite);
+    reservaInvalida.CadastrarHospedes(muitosHospedes);
+}
+catch (ArgumentException ex)
+{
+    Console.WriteLine($"\nErro esperado: {ex.Message}");
+}
